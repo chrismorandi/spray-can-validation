@@ -46,7 +46,7 @@ trait PassportValidationService extends HttpService {
         entity(as[Applicant]) { applicant =>
           val errors = PassportValidationController.validate(applicant)
           if (errors isEmpty) complete("Creating applicant: %s".format(applicant.passportNumber))
-          else complete(StatusCodes.BadRequest, errors serializeToJson)
+          else complete(StatusCodes.BadRequest, errors.serializeToJson)
         }
       }
     }

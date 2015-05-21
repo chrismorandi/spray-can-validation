@@ -21,7 +21,7 @@ libraryDependencies ++= {
     "com.typesafe.akka"   %%  "akka-actor"    % akkaV,
     "com.typesafe.akka"   %%  "akka-testkit"  % akkaV   % "test",
     "com.typesafe.akka"   %%  "akka-slf4j"    % akkaV,
-    "org.specs2"          %%  "specs2-core"   % specsVersion  % "test",
+    "org.scalatest"              %% "scalatest"           % "2.2.4"       % "test",
     "org.skinny-framework"       %% "skinny-validator"    % "1.3.17"
   )
 }

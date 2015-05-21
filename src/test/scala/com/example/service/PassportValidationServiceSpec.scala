@@ -1,61 +1,58 @@
 package com.example.service
 
-import org.specs2.mutable.Specification
-import spray.http.StatusCodes._
 import spray.http._
-import spray.testkit.Specs2RouteTest
 import spray.json._
+import spray.testkit.ScalatestRouteTest
+import spray.http.StatusCodes._
+import org.scalatest._
+import org.scalatest.Matchers
 
 import com.example.infrastructure.JsonProtocol._
 import com.example.domain.Applicant
 
-class PassportValidationServiceSpec extends Specification with Specs2RouteTest with PassportValidationService {
+
+class PassportValidationServiceSpec extends FreeSpec with PassportValidationService with ScalatestRouteTest with Matchers {
 
   def actorRefFactory = system
   
-  "PassportValidationService" should {
-
-    "return a greeting for GET requests to the root path" in {
-      Get() ~> myRoute ~> check {
-        responseAs[String] must contain("all good!")
+  "The PassportValidationService" - {
+    "when calling GET /" - {
+      "should return a greeting" in {
+        Get() ~> myRoute ~> check {
+          status shouldEqual (OK)
+        }
       }
     }
 
-    "post new applicant" in {
-      Post("/application", HttpEntity(MediaTypes.`application/json`, Applicant("123456789","x@y.com","return@y.com").toJson.toString)) ~>
-        myRoute ~> check {
-        status shouldEqual OK //Created??
-        responseAs[String] must contain("Creating applicant: 123456789")
+    "when posting a valid applicant" - {
+      "should return the passport number and status OK" - {
+        Post("/application", HttpEntity(MediaTypes.`application/json`, Applicant("123456789", "x@y.com", "return@y.com").toJson.toString)) ~>
+          myRoute ~> check {
+          status shouldEqual (OK)
+          responseAs[String] should equal("Creating applicant: 123456789")
+        }
       }
     }
 
-    "post applicant with incorrect passportNumber" in {
-      Post("/application", HttpEntity(MediaTypes.`application/json`, Applicant("12345678T9","x@y.com","return@y.com").toJson.toString)) ~>
+    "when posting applicant with incorrect passportNumber" - {
+      "should return a BadRequest with invalid passport indication in payload" - {
+        Post("/application", HttpEntity(MediaTypes.`application/json`, Applicant("12345678T9", "x@y.com", "return@y.com").toJson.toString)) ~>
+          myRoute ~> check {
+          status shouldEqual BadRequest
+          responseAs[String] should equal("{\"error\":[{\"fieldName\":\"passportNumber\",\"errorMessage\":\"passportNumber is not a valid number\"}]}")
+        }
+      }
+    }
+
+    "when posting an applicant with incorrect email" - {
+      "should return a BadRequest with bad email indactor in the payload"
+      Post("/application", HttpEntity(MediaTypes.`application/json`, Applicant("12345678T9", "xy.com", "return@y.com").toJson.toString)) ~>
         myRoute ~> check {
         status shouldEqual BadRequest
-        responseAs[String] must contain("passportNumber is not a valid number")
-      }
-    }
-
-    "post applicant with incorrect email" in {
-      Post("/application", HttpEntity(MediaTypes.`application/json`, Applicant("12345678T9","xy.com","return@y.com").toJson.toString)) ~>
-        myRoute ~> check {
-        status shouldEqual BadRequest
-        responseAs[String] must contain("email is not a valid email")
-      }
-    }
-
-    "leave GET requests to other paths unhandled" in {
-      Get("/kermit") ~> myRoute ~> check {
-        handled must beFalse
-      }
-    }
-
-    "return a MethodNotAllowed error for PUT requests to the root path" in {
-      Put() ~> sealRoute(myRoute) ~> check {
-        status === MethodNotAllowed
-        responseAs[String] === "HTTP method not allowed, supported methods: GET"
+        responseAs[String] should equal("{\"error\":[{\"fieldName\":\"passportNumber\",\"errorMessage\":\"passportNumber is not a valid number\"},{\"fieldName\":\"email\",\"errorMessage\":\"email is not a valid email\"}]}")
       }
     }
   }
+
+
 }
